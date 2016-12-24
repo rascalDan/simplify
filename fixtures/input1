@@ -1,0 +1,8 @@
+/bin
+/bin/bash
+/bin/grep
+/bin/foo
+/bin/foo/bar
+/boot
+/boot/grub
+/boot/grub/cfg

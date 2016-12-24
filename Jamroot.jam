@@ -1,0 +1,45 @@
+import testing ;
+import package ;
+import os ;
+
+using gcc : : [ os.environ CXX ] ;
+
+path-constant me : . ;
+
+project
+  : requirements
+      <variant>release:<cxxflags>"-std=c++1y -fvisibility=hidden"
+      <variant>release:<linkflags>"-Wl,-z,defs,--warn-once,--gc-sections"
+      <variant>debug:<cxxflags>"-W -Wall -Werror -Wwrite-strings -std=c++1y -fvisibility=hidden"
+      <variant>debug:<linkflags>"-Wl,-z,defs,--warn-once"
+	;
+
+lib boost_unit_test_framework ;
+lib boost_program_options ;
+lib boost_filesystem ;
+lib boost_system ;
+
+lib simplify-core : filter.cpp filterOptions.cpp :
+	<library>boost_filesystem
+	<library>boost_system
+	: :
+	<library>boost_filesystem
+	<library>boost_system
+	;
+
+exe simplify : main.cpp :
+	<library>boost_program_options
+	<library>simplify-core
+	;
+
+run test.cpp : :
+	fixtures/expected1
+	fixtures/expected1exclude
+	fixtures/input1
+	:
+	<define>BOOST_TEST_DYN_LINK
+	<define>ROOT=\"$(me)\"
+	<library>boost_unit_test_framework
+	<library>simplify-core
+	: testSimplify ;
+
