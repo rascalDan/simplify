@@ -2,6 +2,7 @@
 #include <mntent.h>
 #include <iostream>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem/operations.hpp>
 
 namespace Simplify {
 	void
@@ -10,7 +11,9 @@ namespace Simplify {
 		if (o.excludeMounts) {
 			addMountpoints();
 		}
-		std::copy(o.excludes.begin(), o.excludes.end(), std::inserter(exclude, exclude.begin()));
+		for(auto & e : o.excludes) {
+			exclude.insert(boost::filesystem::canonical(e, boost::filesystem::current_path()));
+		}
 	}
 
 	void
@@ -18,7 +21,7 @@ namespace Simplify {
 	{
 		auto fh = setmntent("/proc/mounts", "r");
 		while (auto ent = getmntent(fh)) {
-			exclude.insert(ent->mnt_dir);
+			exclude.insert(boost::filesystem::canonical(ent->mnt_dir));
 		}
 		endmntent(fh);
 	}
