@@ -40,3 +40,12 @@ Simplify options:
   -X [ --excludemounts ]  Add all mount points to exclusion list
 
 ```
+```
+~ $ simplifind --help
+Simplifind options:
+  -h [ --help ]           Show this help message
+  -x [ --exclude ] arg    Add a directory to exclusion list
+  -X [ --excludemounts ]  Add all mount points to exclusion list
+  -r [ --root ] arg       Add a root to search
+
+```
