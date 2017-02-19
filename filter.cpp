@@ -38,6 +38,26 @@ namespace Simplify {
 		}
 	}
 
+	void
+	Filter::find(const Path & root, std::ostream & output) const
+	{
+		if (exclude.find(root) == exclude.end()) {
+			if (!pathPrefixesExclusion(root)) {
+				output << root.string() << std::endl;
+				return;
+			}
+			for (boost::filesystem::directory_iterator p(root); p != boost::filesystem::directory_iterator(); p++) {
+				auto & ip = *p;
+				if (boost::filesystem::is_directory(ip)) {
+					find(ip, output);
+				}
+				else {
+					output << ip.path().string() << std::endl;
+				}
+			}
+		}
+	}
+
 	bool
 	Filter::accept(const Path & path) const
 	{

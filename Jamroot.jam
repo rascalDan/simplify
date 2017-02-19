@@ -32,6 +32,11 @@ exe simplify : main.cpp :
 	<library>simplify-core
 	;
 
+exe simplifind : find.cpp :
+	<library>boost_program_options
+	<library>simplify-core
+	;
+
 run test.cpp : :
 	fixtures/expected1
 	fixtures/expected1exclude
@@ -43,5 +48,5 @@ run test.cpp : :
 	<library>simplify-core
 	: testSimplify ;
 
-package.install install : : simplify ;
+package.install install : : simplify simplifind ;
 

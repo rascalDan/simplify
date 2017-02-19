@@ -16,6 +16,7 @@ namespace Simplify {
 
 			void initiailize(const FilterOptions &);
 			void filterStream(std::istream & input, std::ostream & output) const;
+			void find(const Path & root, std::ostream & output) const;
 			void reset();
 
 		protected:
