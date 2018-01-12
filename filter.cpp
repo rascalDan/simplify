@@ -21,7 +21,7 @@ namespace Simplify {
 	{
 		auto fh = setmntent("/proc/mounts", "r");
 		while (auto ent = getmntent(fh)) {
-			exclude.insert(boost::filesystem::canonical(ent->mnt_dir));
+			exclude.insert(ent->mnt_dir);
 		}
 		endmntent(fh);
 	}
