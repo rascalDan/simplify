@@ -6,12 +6,15 @@ using gcc : : [ os.environ CXX ] ;
 
 path-constant me : . ;
 
+variant coverage : debug ;
 project
   : requirements
-      <variant>release:<cxxflags>"-std=c++1y -fvisibility=hidden"
-      <variant>release:<linkflags>"-Wl,-z,defs,--warn-once,--gc-sections"
-      <variant>debug:<cxxflags>"-W -Wall -Werror -Wwrite-strings -std=c++1y -fvisibility=hidden"
-      <variant>debug:<linkflags>"-Wl,-z,defs,--warn-once"
+      <cxxflags>"-std=c++1y -fvisibility=hidden"
+      <linkflags>"-Wl,-z,defs,--warn-once"
+      <variant>release:<linkflags>"-Wl,--gc-sections"
+      <variant>debug:<cxxflags>"-W -Wall -Werror -Wwrite-strings"
+      <variant>coverage:<cxxflags>"--coverage"
+      <variant>coverage:<linkflags>"--coverage"
 	;
 
 lib boost_unit_test_framework ;
