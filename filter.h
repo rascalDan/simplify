@@ -14,7 +14,7 @@ namespace Simplify {
 			typedef boost::filesystem::path Path;
 			typedef std::set<Path> PathSet;
 
-			void initiailize(const FilterOptions &);
+			void initiailize(FilterOptions &);
 			void filterStream(std::istream & input, std::ostream & output) const;
 			void find(const Path & root, std::ostream & output) const;
 			void reset();

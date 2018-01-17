@@ -8,22 +8,30 @@
 #include "filter.h"
 #define XSTR(s) STR(s)
 #define STR(s) #s
-boost::filesystem::path root(XSTR(ROOT));
+const boost::filesystem::path root(XSTR(ROOT));
+const boost::filesystem::path self(boost::filesystem::canonical("/proc/self/exe"));
+const boost::filesystem::path binDir(self.parent_path());
 
 using namespace Simplify;
 
-std::set<std::string>
-readlines(const boost::filesystem::path & input)
+Filter::PathSet
+readlines(std::istream & s)
 {
-	std::set<std::string> out;
-	std::ifstream s(input.string());
-	BOOST_TEST_INFO(input);
+	Filter::PathSet out;
 	BOOST_REQUIRE(s.good());
 	std::string line;
 	while (!std::getline(s, line).eof()) {
 		out.insert(line);
 	}
 	return out;
+}
+
+Filter::PathSet
+readlines(const boost::filesystem::path & input)
+{
+	std::ifstream s(input.string());
+	BOOST_TEST_INFO(input);
+	return readlines(s);
 }
 
 namespace std {
@@ -105,7 +113,7 @@ BOOST_AUTO_TEST_CASE( simpleStream )
 {
 	FilterOptions fo;
 	initiailize(fo);
-	Path output = boost::filesystem::canonical("/proc/self/exe").parent_path() / "output.txt";
+	Path output = binDir / "output.txt";
 	Path input1 = root / "fixtures/input1";
 	Path expected1 = root / "fixtures/expected1";
 
@@ -121,7 +129,7 @@ BOOST_AUTO_TEST_CASE( simpleStreamExclude )
 	FilterOptions fo;
 	fo.excludes.push_back("/bin");
 	initiailize(fo);
-	Path output = boost::filesystem::canonical("/proc/self/exe").parent_path() / "output.txt";
+	Path output = binDir / "output.txt";
 	Path input1 = root / "fixtures/input1";
 	Path expected1 = root / "fixtures/expected1exclude";
 
@@ -130,6 +138,81 @@ BOOST_AUTO_TEST_CASE( simpleStreamExclude )
 	filterStream(in, out);
 
 	BOOST_REQUIRE_EQUAL(readlines(output), readlines(expected1));
+}
+
+BOOST_AUTO_TEST_CASE( simpleFind )
+{
+	FilterOptions fo;
+	std::stringstream out;
+	initiailize(fo);
+	find(binDir, out);
+	BOOST_REQUIRE_EQUAL(readlines(out), PathSet({
+		binDir
+	}));
+}
+
+BOOST_AUTO_TEST_CASE( simpleFindNoRead )
+{
+	Path testRoot = binDir / typeid(this).name();
+	boost::filesystem::remove_all(testRoot);
+	boost::filesystem::create_directory(testRoot);
+	boost::filesystem::create_directory(testRoot / "a");
+	boost::filesystem::create_directory(testRoot / "b");
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	// Should succeed as without exclusions, we shouldn't recurse
+	FilterOptions fo;
+	std::stringstream out;
+	initiailize(fo);
+	find(testRoot, out);
+	BOOST_REQUIRE_EQUAL(readlines(out), PathSet({
+		testRoot
+	}));
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
+	boost::filesystem::remove_all(testRoot);
+}
+
+BOOST_AUTO_TEST_CASE( simpleFindNoReadExclude )
+{
+	Path testRoot = binDir / typeid(this).name();
+	boost::filesystem::remove_all(testRoot);
+	boost::filesystem::create_directory(testRoot);
+	boost::filesystem::create_directory(testRoot / "a");
+	boost::filesystem::create_directory(testRoot / "b");
+	boost::filesystem::create_directory(testRoot / "a" / "c");
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	BOOST_TEST_CHECKPOINT("Set-up complete");
+	FilterOptions fo;
+	std::stringstream out;
+	fo.excludes.push_back(testRoot / "a" / "c");
+	initiailize(fo);
+	BOOST_REQUIRE_THROW(find(testRoot, out), boost::filesystem::filesystem_error);
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
+	boost::filesystem::remove_all(testRoot);
+}
+
+BOOST_AUTO_TEST_CASE( simpleFindNoReadExcludeUnreadable )
+{
+	Path testRoot = binDir / typeid(this).name();
+	boost::filesystem::remove_all(testRoot);
+	boost::filesystem::create_directory(testRoot);
+	boost::filesystem::create_directory(testRoot / "a");
+	boost::filesystem::create_directory(testRoot / "b");
+	boost::filesystem::create_directory(testRoot / "a" / "c");
+	boost::filesystem::permissions(testRoot / "a" / "c", boost::filesystem::no_perms);
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	BOOST_TEST_CHECKPOINT("Set-up complete");
+	FilterOptions fo;
+	std::stringstream out;
+	fo.excludes.push_back((testRoot / "a").lexically_relative(boost::filesystem::current_path()));
+	fo.excludes.push_back(testRoot / "a" / "c");
+	initiailize(fo);
+	find(testRoot, out);
+	BOOST_REQUIRE_EQUAL(readlines(out), PathSet({
+		testRoot / "b"
+	}));
+	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
+	boost::filesystem::permissions(testRoot / "a" / "c", boost::filesystem::owner_all);
+	boost::filesystem::remove_all(testRoot);
 }
 
 BOOST_AUTO_TEST_CASE( excludesBin )

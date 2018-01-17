@@ -6,13 +6,18 @@
 
 namespace Simplify {
 	void
-	Filter::initiailize(const FilterOptions & o)
+	Filter::initiailize(FilterOptions & o)
 	{
 		if (o.excludeMounts) {
 			addMountpoints();
 		}
 		for(auto & e : o.excludes) {
-			exclude.insert(boost::filesystem::canonical(e, boost::filesystem::current_path()));
+			if (e.is_relative()) {
+				exclude.insert(boost::filesystem::canonical(e, boost::filesystem::current_path()));
+			}
+			else {
+				exclude.insert(e.remove_trailing_separator());
+			}
 		}
 	}
 
