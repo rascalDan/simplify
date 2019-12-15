@@ -9,12 +9,13 @@ path-constant me : . ;
 variant coverage : debug ;
 project
   : requirements
-      <cxxflags>"-std=c++1y -fvisibility=hidden"
+			<cxxstd>17
+			<visibility>hidden
       <linkflags>"-Wl,-z,defs,--warn-once"
       <variant>release:<linkflags>"-Wl,--gc-sections"
-      <variant>debug:<cxxflags>"-W -Wall -Werror -Wwrite-strings"
-      <variant>coverage:<cxxflags>"--coverage"
-      <variant>coverage:<linkflags>"--coverage"
+      <variant>debug:<warnings>extra
+      <variant>debug:<warnings-as-errors>on
+      <variant>coverage:<coverage>on
 	;
 
 lib boost_unit_test_framework ;
