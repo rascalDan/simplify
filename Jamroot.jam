@@ -20,15 +20,12 @@ project
 
 lib boost_unit_test_framework ;
 lib boost_program_options ;
-lib boost_filesystem ;
-lib boost_system ;
+lib stdc++fs ;
 
 lib simplify-core : filter.cpp filterOptions.cpp :
-	<library>boost_filesystem
-	<library>boost_system
+	<library>stdc++fs
 	: :
-	<library>boost_filesystem
-	<library>boost_system
+	<library>stdc++fs
 	;
 
 exe simplify : main.cpp :

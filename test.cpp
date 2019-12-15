@@ -1,16 +1,16 @@
 #define BOOST_TEST_MODULE Simplify
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 #include <algorithm>
 #include <fstream>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem/operations.hpp>
 
 #include "filter.h"
 #define XSTR(s) STR(s)
 #define STR(s) #s
-const boost::filesystem::path root(XSTR(ROOT));
-const boost::filesystem::path self(boost::filesystem::canonical("/proc/self/exe"));
-const boost::filesystem::path binDir(self.parent_path());
+const std::filesystem::path root(XSTR(ROOT));
+const std::filesystem::path self(std::filesystem::canonical("/proc/self/exe"));
+const std::filesystem::path binDir(self.parent_path());
 
 using namespace Simplify;
 
@@ -27,7 +27,7 @@ readlines(std::istream & s)
 }
 
 Filter::PathSet
-readlines(const boost::filesystem::path & input)
+readlines(const std::filesystem::path & input)
 {
 	std::ifstream s(input.string());
 	BOOST_TEST_INFO(input);
@@ -44,6 +44,18 @@ namespace std {
 }
 
 BOOST_FIXTURE_TEST_SUITE( filter, Filter );
+
+using Paths = std::tuple<std::filesystem::path, std::filesystem::path>;
+BOOST_DATA_TEST_CASE( normalise, boost::unit_test::data::make<Paths>({
+	{ "/", "/" },
+	{ "/bin", "/bin" },
+	{ "/bin/", "/bin" },
+	{ "/usr/bin", "/usr/bin" },
+	{ "/usr/bin/", "/usr/bin" },
+}), in, out)
+{
+	BOOST_CHECK_EQUAL(remove_trailing_separator(in), out);
+}
 
 BOOST_AUTO_TEST_CASE( defaultOptions )
 {
@@ -154,11 +166,11 @@ BOOST_AUTO_TEST_CASE( simpleFind )
 BOOST_AUTO_TEST_CASE( simpleFindNoRead )
 {
 	Path testRoot = binDir / typeid(this).name();
-	boost::filesystem::remove_all(testRoot);
-	boost::filesystem::create_directory(testRoot);
-	boost::filesystem::create_directory(testRoot / "a");
-	boost::filesystem::create_directory(testRoot / "b");
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	std::filesystem::remove_all(testRoot);
+	std::filesystem::create_directory(testRoot);
+	std::filesystem::create_directory(testRoot / "a");
+	std::filesystem::create_directory(testRoot / "b");
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::none);
 	// Should succeed as without exclusions, we shouldn't recurse
 	FilterOptions fo;
 	std::stringstream out;
@@ -167,52 +179,52 @@ BOOST_AUTO_TEST_CASE( simpleFindNoRead )
 	BOOST_REQUIRE_EQUAL(readlines(out), PathSet({
 		testRoot
 	}));
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
-	boost::filesystem::remove_all(testRoot);
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::owner_all);
+	std::filesystem::remove_all(testRoot);
 }
 
 BOOST_AUTO_TEST_CASE( simpleFindNoReadExclude )
 {
 	Path testRoot = binDir / typeid(this).name();
-	boost::filesystem::remove_all(testRoot);
-	boost::filesystem::create_directory(testRoot);
-	boost::filesystem::create_directory(testRoot / "a");
-	boost::filesystem::create_directory(testRoot / "b");
-	boost::filesystem::create_directory(testRoot / "a" / "c");
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	std::filesystem::remove_all(testRoot);
+	std::filesystem::create_directory(testRoot);
+	std::filesystem::create_directory(testRoot / "a");
+	std::filesystem::create_directory(testRoot / "b");
+	std::filesystem::create_directory(testRoot / "a" / "c");
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::none);
 	BOOST_TEST_CHECKPOINT("Set-up complete");
 	FilterOptions fo;
 	std::stringstream out;
 	fo.excludes.push_back(testRoot / "a" / "c");
 	initiailize(fo);
-	BOOST_REQUIRE_THROW(find(testRoot, out), boost::filesystem::filesystem_error);
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
-	boost::filesystem::remove_all(testRoot);
+	BOOST_REQUIRE_THROW(find(testRoot, out), std::filesystem::filesystem_error);
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::owner_all);
+	std::filesystem::remove_all(testRoot);
 }
 
 BOOST_AUTO_TEST_CASE( simpleFindNoReadExcludeUnreadable )
 {
 	Path testRoot = binDir / typeid(this).name();
-	boost::filesystem::remove_all(testRoot);
-	boost::filesystem::create_directory(testRoot);
-	boost::filesystem::create_directory(testRoot / "a");
-	boost::filesystem::create_directory(testRoot / "b");
-	boost::filesystem::create_directory(testRoot / "a" / "c");
-	boost::filesystem::permissions(testRoot / "a" / "c", boost::filesystem::no_perms);
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::no_perms);
+	std::filesystem::remove_all(testRoot);
+	std::filesystem::create_directory(testRoot);
+	std::filesystem::create_directory(testRoot / "a");
+	std::filesystem::create_directory(testRoot / "b");
+	std::filesystem::create_directory(testRoot / "a" / "c");
+	std::filesystem::permissions(testRoot / "a" / "c", std::filesystem::perms::none);
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::none);
 	BOOST_TEST_CHECKPOINT("Set-up complete");
 	FilterOptions fo;
 	std::stringstream out;
-	fo.excludes.push_back((testRoot / "a").lexically_relative(boost::filesystem::current_path()));
+	fo.excludes.push_back((testRoot / "a").lexically_relative(std::filesystem::current_path()));
 	fo.excludes.push_back(testRoot / "a" / "c");
 	initiailize(fo);
 	find(testRoot, out);
 	BOOST_REQUIRE_EQUAL(readlines(out), PathSet({
 		testRoot / "b"
 	}));
-	boost::filesystem::permissions(testRoot / "a", boost::filesystem::owner_all);
-	boost::filesystem::permissions(testRoot / "a" / "c", boost::filesystem::owner_all);
-	boost::filesystem::remove_all(testRoot);
+	std::filesystem::permissions(testRoot / "a", std::filesystem::perms::owner_all);
+	std::filesystem::permissions(testRoot / "a" / "c", std::filesystem::perms::owner_all);
+	std::filesystem::remove_all(testRoot);
 }
 
 BOOST_AUTO_TEST_CASE( excludesBin )

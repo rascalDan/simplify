@@ -1,6 +1,5 @@
 #include <iostream>
 #include <boost/program_options.hpp>
-#include <boost/filesystem/operations.hpp>
 #include "filter.h"
 
 namespace po = boost::program_options;
@@ -27,7 +26,7 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 	for(auto & root : roots) {
-		root = boost::filesystem::canonical(root, boost::filesystem::current_path()).string();
+		root = std::filesystem::canonical(root).string();
 	}
 
 	Simplify::Filter filter;

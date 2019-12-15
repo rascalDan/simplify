@@ -11,7 +11,7 @@
 namespace Simplify {
 	class DLL_PUBLIC Filter {
 		public:
-			typedef boost::filesystem::path Path;
+			typedef std::filesystem::path Path;
 			typedef std::set<Path> PathSet;
 
 			void initiailize(FilterOptions &);
@@ -24,6 +24,16 @@ namespace Simplify {
 			bool accept(const Path & input) const;
 			bool pathPrefixesExclusion(const Path &) const;
 			bool pathPrefixesAccepted(const Path &) const;
+
+			static auto remove_trailing_separator(const Path & p)
+			{
+				if (!p.has_filename()) {
+					return p.parent_path();
+				}
+				else {
+					return p;
+				}
+			}
 
 			PathSet exclude;
 			mutable PathSet accepted;

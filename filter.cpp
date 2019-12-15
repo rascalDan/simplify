@@ -2,7 +2,6 @@
 #include <mntent.h>
 #include <iostream>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem/operations.hpp>
 
 namespace Simplify {
 	void
@@ -13,10 +12,10 @@ namespace Simplify {
 		}
 		for(auto & e : o.excludes) {
 			if (e.is_relative()) {
-				exclude.insert(boost::filesystem::canonical(e, boost::filesystem::current_path()));
+				exclude.insert(std::filesystem::canonical(e));
 			}
 			else {
-				exclude.insert(e.remove_trailing_separator());
+				exclude.insert(remove_trailing_separator(e));
 			}
 		}
 	}
@@ -37,7 +36,7 @@ namespace Simplify {
 		std::string pathInput;
 		while (!std::getline(input, pathInput).eof()) {
 			Path path(pathInput);
-			if (accept(path.remove_trailing_separator())) {
+			if (accept(remove_trailing_separator(path))) {
 				output << path.string() << std::endl;
 			}
 		}
@@ -51,9 +50,9 @@ namespace Simplify {
 				output << root.string() << std::endl;
 				return;
 			}
-			for (boost::filesystem::directory_iterator p(root); p != boost::filesystem::directory_iterator(); p++) {
+			for (std::filesystem::directory_iterator p(root); p != std::filesystem::directory_iterator(); p++) {
 				auto & ip = *p;
-				if (boost::filesystem::is_directory(ip)) {
+				if (std::filesystem::is_directory(ip)) {
 					find(ip, output);
 				}
 				else {
